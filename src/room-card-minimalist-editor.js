@@ -249,11 +249,6 @@ class RoomCardEditor extends LitElement {
 	_addEntityState() {
 		if (!this._config) return;
 
-		// Prevent adding more than 4 entities
-		if (this._config.entities && this._config.entities.length >= 4) {
-			return;
-		}
-
 		const entities = [...this._config.entities];
 		entities.push({ type: 'template' });
 
@@ -488,6 +483,16 @@ class RoomCardEditor extends LitElement {
 						context: { icon_entity: 'entity' },
 					},
 				],
+			},
+			{
+				name: 'label',
+				label: localize(this.hass, 'state_label_text', 'Label / Indicator'),
+				selector: { text: {} },
+			},
+			{
+				name: 'column',
+				label: localize(this.hass, 'column', 'Column (1 = rightmost)'),
+				selector: { number: { min: 1, mode: 'box' } },
 			},
 			// Only show color/template fields for non-climate entities
 			...(item.type === 'entity' && this._isClimateEntity(item)
@@ -917,32 +922,13 @@ class RoomCardEditor extends LitElement {
 
 			<div style="display: flex;justify-content: space-between; margin-top: 20px;">
 				<p>${localize(this.hass, 'states', 'States')}</p>
-				${this._config.entities && this._config.entities.length >= 4
-					? html`<mwc-button
-							style="margin-top: 5px; cursor: not-allowed;"
-							disabled
-							title="${localize(
-								this.hass,
-								'maximum_states_reached',
-								'Maximum 4 states reached'
-							)}"
-						>
-							<ha-icon .icon=${'mdi:plus'}></ha-icon>${localize(
-								this.hass,
-								'add_state',
-								'Add State'
-							)}
-						</mwc-button>`
-					: html`<mwc-button
-							style="margin-top: 5px; cursor: pointer;"
-							@click=${this._addEntityState}
-						>
-							<ha-icon .icon=${'mdi:plus'}></ha-icon>${localize(
-								this.hass,
-								'add_state',
-								'Add State'
-							)}
-						</mwc-button>`}
+				<mwc-button style="margin-top: 5px; cursor: pointer;" @click=${this._addEntityState}>
+					<ha-icon .icon=${'mdi:plus'}></ha-icon>${localize(
+						this.hass,
+						'add_state',
+						'Add State'
+					)}
+				</mwc-button>
 			</div>
 
 			${this._renderEntities()}

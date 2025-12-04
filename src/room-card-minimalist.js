@@ -298,11 +298,7 @@ class RoomCard extends LitElement {
 	render() {
 		const secondary = this._getValueRawOrTemplate(this._config.secondary);
 		const secondaryColor = this._getValueRawOrTemplate(this._config.secondary_color);
-		let entitiesToShow = this._config.entities.slice(0, 4);
-
-		if (this._config.entities_reverse_order) {
-			entitiesToShow = [...entitiesToShow].reverse();
-		}
+		const entityColumns = this._getEntityColumns();
 
 		const { background_circle_color, icon_color, text_color } = this._applyCardTemplate();
 
@@ -435,19 +431,51 @@ class RoomCard extends LitElement {
 					</div>
 
 					<div class="content-right">
-						<div
-							class="states ${this._config.entities_reverse_order
-								? 'states-reverse'
-								: ''}"
-						>
-							${entitiesToShow.map((item) => {
-								return this._getItemHTML(item);
-							})}
+						<div class="states">
+							${entityColumns.map(
+								(column) => html`
+									<div
+										class="states-column ${this._config.entities_reverse_order
+											? 'states-column-reverse'
+											: ''}"
+									>
+										${column.map((item) => this._getItemHTML(item))}
+									</div>
+								`
+							)}
 						</div>
 					</div>
 				</div>
 			</ha-card>
 		`;
+	}
+
+	_getEntityColumns() {
+		const entities = this._config?.entities || [];
+		const orderedEntities = this._config.entities_reverse_order
+			? [...entities].reverse()
+			: [...entities];
+
+		const columnsByIndex = new Map();
+
+		orderedEntities.forEach((item, idx) => {
+			const configuredColumn = Number.isFinite(item?.column)
+				? Math.max(1, Math.floor(item.column))
+				: Number.isFinite(parseInt(item?.column, 10))
+					? Math.max(1, Math.floor(parseInt(item.column, 10)))
+					: null;
+			const columnIndex = configuredColumn ?? Math.floor(idx / 4) + 1;
+
+			if (!columnsByIndex.has(columnIndex)) {
+				columnsByIndex.set(columnIndex, []);
+			}
+
+			columnsByIndex.get(columnIndex).push(item);
+		});
+
+		return [...columnsByIndex.keys()]
+			.sort((a, b) => a - b)
+			.map((key) => columnsByIndex.get(key));
 	}
 
 	_isClimateEntity(entity) {
@@ -816,6 +844,10 @@ class RoomCard extends LitElement {
 		const iconClass = !stateIsOn ? 'off' : 'on';
 
 		const isItemClickable = this._isItemClickable(item);
+		const itemLabel =
+			item.label !== undefined && item.label !== null
+				? this._getValueRawOrTemplate(item.label)
+				: '';
 
 		return html`
 			<ha-card
@@ -831,6 +863,9 @@ class RoomCard extends LitElement {
 				class="state-item ${isItemClickable ? 'clickable' : 'non-clickable'}"
 				style="background-color: ${finalBackgroundColor}"
 			>
+				${itemLabel
+					? html`<div class="state-label" title="${itemLabel}">${itemLabel}</div>`
+					: ''}
 				<ha-icon
 					class="state-icon ${iconClass}"
 					.icon=${icon}
@@ -1180,15 +1215,23 @@ class RoomCard extends LitElement {
 
 			.states {
 				display: flex;
+				flex-direction: row-reverse;
+				gap: 12px;
+				align-items: stretch;
+			}
+
+			.states-column {
+				display: flex;
 				flex-direction: column;
 				gap: 12px;
 				align-items: center;
 				height: 236px;
 				justify-content: flex-start;
 				padding-top: 20px;
+				flex-shrink: 0;
 			}
 
-			.states-reverse {
+			.states-column-reverse {
 				justify-content: flex-end;
 				padding-top: 0;
 				padding-bottom: 20px;
@@ -1205,6 +1248,29 @@ class RoomCard extends LitElement {
 				position: relative;
 				z-index: 1;
 				border: none;
+				overflow: visible;
+			}
+
+			.state-label {
+				position: absolute;
+				top: 0px;
+				left: 50%;
+				transform: translateX(-50%);
+				max-width: calc(var(--state-item-size) + 16px);
+				text-align: center;
+				padding: 4px 10px;
+				border-radius: 999px;
+				background: var(--state-label-background, transparent);
+				color: var(--state-label-color, var(--primary-text-color));
+				border: var(--state-label-border, none);
+				box-shadow: var(--state-label-shadow, none);
+				font-size: 11px;
+				font-weight: 400;
+				line-height: 1.1;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				pointer-events: none;
 			}
 
 			.state-item.clickable {
@@ -1248,6 +1314,12 @@ class RoomCard extends LitElement {
 				.icon-background {
 					opacity: 0.3;
 				}
+
+				.state-label {
+					background: var(--state-label-background, transparent);
+					color: var(--state-label-color, #fff);
+					border-color: var(--state-label-border, none);
+				}
 			}
 
 			/* Responsive adjustments */
@@ -1266,12 +1338,15 @@ class RoomCard extends LitElement {
 				}
 
 				.states {
-					height: 176px;
-					padding-top: 0;
 					gap: 8px;
 				}
 
-				.states-reverse {
+				.states-column {
+					height: 176px;
+					padding-top: 0;
+				}
+
+				.states-column-reverse {
 					padding-bottom: 0;
 				}
 

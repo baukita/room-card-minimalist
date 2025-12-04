@@ -15,7 +15,7 @@
 
 Room Card Minimalist is based on [patrickfnielsen/hass-room-card](https://github.com/patrickfnielsen/hass-room-card) but extensively redesigned with added functionality in the style of the [room-card from UI Lovelace Minimalist](https://ui-lovelace-minimalist.github.io/UI/usage/cards/card_room/) which I've used in the past and missed ever since for "normal" Lovelace setups.
 
-It provides a fixed size card with a room name, styled icon, and optional secondary info. You can configure up to 4 entities or templates to be displayed as buttons with icons that change based on the entity/template state.
+It provides a fixed size card with a room name, styled icon, and optional secondary info. You can configure any number of entities or templates to be displayed as buttons (they are arranged in columns of up to 4, growing from right to left).
 
 ## Installation
 
@@ -69,7 +69,7 @@ The editor is supported, but if you want to use `yaml`, here are the properties:
 | `entities_reverse_order`           | boolean | `false`  | Display entities from bottom to top instead of top to bottom.                                                                                                                      |
 | `use_template_color_for_title`     | boolean | `false`  | Use the card template color for the room title text.                                                                                                                               |
 | `use_template_color_for_secondary` | boolean | `false`  | Use the card template color for the secondary text/template.                                                                                                                       |
-| `entities`                         | list    | Optional | List of entities to display as buttons (max 4).                                                                                                                                    |
+| `entities`                         | list    | Optional | List of entities to display as buttons (adds columns of up to 4 items each, expanding right to left).                                                                             |
 
 ### Background Type Options
 
@@ -179,11 +179,15 @@ secondary_hold_action:
 
 ### Entity Configuration
 
+Entities are arranged in columns of up to 4 items. Column `1` is displayed on the right; higher column numbers appear to the left. If no column is specified, entities are automatically grouped 4 per column (right to left).
+
 | Name                   | Type    | Default  | Description                                                                                                                  |
 | :--------------------- | :------ | :------- | :--------------------------------------------------------------------------------------------------------------------------- |
 | `type`                 | enum    | Required | Use `entity` or `template`.                                                                                                  |
 | `icon`                 | string  | Required | Icon to render.                                                                                                              |
 | `icon_off`             | string  | Optional | Icon to render when state is off. If not set, the icon will not change.                                                      |
+| `label`                | string  | Optional | Text label shown on the state (useful for identifying items in a column). Supports templating.                               |
+| `column`               | number  | Optional | Column number for this entity (1 is the right-most column). Defaults to automatic grouping of 4 per column.                  |
 | `entity`               | string  | Required | Required if type is `entity`. The entity ID to monitor.                                                                      |
 | `on_state`             | string  | Required | Required if type is `entity` and not a climate entity. The state value that will be considered as "on".                      |
 | `condition`            | string  | Required | Required if type is `template`. Template that returns any value for "on" state, empty for "off".                             |
