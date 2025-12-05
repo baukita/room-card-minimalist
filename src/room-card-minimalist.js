@@ -848,6 +848,7 @@ class RoomCard extends LitElement {
 			item.label !== undefined && item.label !== null
 				? this._getValueRawOrTemplate(item.label)
 				: '';
+		const chipLetter = itemLabel ? itemLabel.trim().charAt(0) : '';
 
 		return html`
 			<ha-card
@@ -863,8 +864,16 @@ class RoomCard extends LitElement {
 				class="state-item ${isItemClickable ? 'clickable' : 'non-clickable'}"
 				style="background-color: ${finalBackgroundColor}"
 			>
-				${itemLabel
-					? html`<div class="state-label" title="${itemLabel}">${itemLabel}</div>`
+				${chipLetter
+					? html`
+							<div
+								class="state-chip"
+								title="${itemLabel}"
+								style="background-color: transparent; color: ${finalIconColor};"
+							>
+								${chipLetter}
+							</div>
+						`
 					: ''}
 				<ha-icon
 					class="state-icon ${iconClass}"
@@ -1217,22 +1226,22 @@ class RoomCard extends LitElement {
 				display: flex;
 				flex-direction: row-reverse;
 				gap: 12px;
-				align-items: stretch;
+				align-items: flex-start;
 			}
 
 			.states-column {
-				display: flex;
-				flex-direction: column;
-				gap: 12px;
-				align-items: center;
-				height: 236px;
-				justify-content: flex-start;
+				display: grid;
+				grid-auto-rows: var(--state-item-size);
+				row-gap: 12px;
+				justify-items: center;
+				align-content: flex-start;
+				min-height: 236px;
 				padding-top: 20px;
 				flex-shrink: 0;
 			}
 
 			.states-column-reverse {
-				justify-content: flex-end;
+				align-content: flex-end;
 				padding-top: 0;
 				padding-bottom: 20px;
 			}
@@ -1247,29 +1256,26 @@ class RoomCard extends LitElement {
 				transition: all 0.2s ease;
 				position: relative;
 				z-index: 1;
-				border: none;
+				border: 1px solid var(--state-item-border, rgba(0, 0, 0, 0.06));
+				box-shadow: var(--state-item-shadow, 0 2px 6px rgba(0, 0, 0, 0.08));
 				overflow: visible;
 			}
 
-			.state-label {
+			.state-chip {
 				position: absolute;
-				top: 0px;
-				left: 50%;
-				transform: translateX(-50%);
-				max-width: calc(var(--state-item-size) + 16px);
-				text-align: center;
-				padding: 4px 10px;
+				top: 2px;
+				right: 2px;
+				width: 18px;
+				height: 18px;
 				border-radius: 999px;
-				background: var(--state-label-background, transparent);
-				color: var(--state-label-color, var(--primary-text-color));
-				border: var(--state-label-border, none);
-				box-shadow: var(--state-label-shadow, none);
-				font-size: 11px;
-				font-weight: 400;
-				line-height: 1.1;
-				white-space: nowrap;
-				overflow: hidden;
-				text-overflow: ellipsis;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 10px;
+				font-weight: 700;
+				line-height: 1;
+				border: var(--state-chip-border, none);
+				box-shadow: var(--state-chip-shadow, none);
 				pointer-events: none;
 			}
 
@@ -1282,7 +1288,7 @@ class RoomCard extends LitElement {
 			}
 
 			.state-item.clickable:hover {
-				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+				box-shadow: var(--state-item-shadow-hover, 0 4px 10px rgba(0, 0, 0, 0.12));
 			}
 
 			.state-icon {
@@ -1342,12 +1348,18 @@ class RoomCard extends LitElement {
 				}
 
 				.states-column {
-					height: 176px;
+					min-height: 176px;
 					padding-top: 0;
+					row-gap: 8px;
 				}
 
 				.states-column-reverse {
 					padding-bottom: 0;
+				}
+
+				.state-chip {
+					top: 0px;
+					right: 0px;
 				}
 
 				.icon-background-square {

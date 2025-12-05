@@ -186,7 +186,7 @@ Entities are arranged in columns of up to 4 items. Column `1` is displayed on th
 | `type`                 | enum    | Required | Use `entity` or `template`.                                                                                                  |
 | `icon`                 | string  | Required | Icon to render.                                                                                                              |
 | `icon_off`             | string  | Optional | Icon to render when state is off. If not set, the icon will not change.                                                      |
-| `label`                | string  | Optional | Text label shown on the state (useful for identifying items in a column). Supports templating.                               |
+| `label`                | string  | Optional | Single-letter chip shown at top right (first character is used). Supports templating.                                        |
 | `column`               | number  | Optional | Column number for this entity (1 is the right-most column). Defaults to automatic grouping of 4 per column.                  |
 | `entity`               | string  | Required | Required if type is `entity`. The entity ID to monitor.                                                                      |
 | `on_state`             | string  | Required | Required if type is `entity` and not a climate entity. The state value that will be considered as "on".                      |
