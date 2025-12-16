@@ -1046,7 +1046,7 @@ class RoomCard extends LitElement {
 		return css`
 			:host {
 				--main-color: rgb(var(--rgb-grey));
-				--icon-size: 80px;
+				--icon-size: var(--state-item-size);
 				--icon-background-size: 175px;
 				--state-icon-size: 1.8rem;
 				--state-item-size: 45px;
@@ -1332,7 +1332,6 @@ class RoomCard extends LitElement {
 			@media (max-width: 768px) {
 				:host {
 					height: 200px;
-					--icon-size: 60px;
 					--icon-background-size: 140px;
 					--state-item-size: 38px;
 					--state-icon-size: 1.4rem;
