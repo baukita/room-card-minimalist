@@ -1047,7 +1047,7 @@ class RoomCard extends LitElement {
 			:host {
 				--main-color: rgb(var(--rgb-grey));
 				--icon-size: var(--state-item-size);
-				--icon-background-size: 175px;
+				--icon-background-size: 140px;
 				--state-icon-size: 1.8rem;
 				--state-item-size: 45px;
 				--card-primary-font-size: 18px;
@@ -1142,8 +1142,8 @@ class RoomCard extends LitElement {
 			.icon-background {
 				position: absolute;
 				/* Position the large circle to overflow bottom-left */
-				top: calc(var(--icon-size) / 2 - var(--icon-background-size) / 2);
-				left: calc(var(--icon-size) / 2 - var(--icon-background-size) / 2);
+				top: calc(var(--icon-size) / 2 - 0.7 * var(--icon-background-size) / 2);
+				left: calc(var(--icon-size) / 2 - 1.2 * var(--icon-background-size) / 2);
 				width: var(--icon-background-size);
 				height: var(--icon-background-size);
 				border-radius: 50%;
@@ -1332,7 +1332,7 @@ class RoomCard extends LitElement {
 			@media (max-width: 768px) {
 				:host {
 					height: 200px;
-					--icon-background-size: 140px;
+					--icon-background-size: 120px;
 					--state-item-size: 38px;
 					--state-icon-size: 1.4rem;
 				}
