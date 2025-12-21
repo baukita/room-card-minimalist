@@ -1,6 +1,7 @@
 {
 	"card_template": "Card Color Preset",
 	"card_template_none": "None",
+	"card_entity": "Card State Entity (grey when off)",
 	"background_type": "Background Type",
 	"background_type_none": "None",
 	"background_type_color": "Colorcircle",

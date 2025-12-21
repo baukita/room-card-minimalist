@@ -766,6 +766,13 @@ class RoomCardEditor extends LitElement {
 						},
 					},
 					{
+						name: 'card_entity',
+						label: localize(this.hass, 'card_entity', 'Card State Entity'),
+						selector: {
+							entity: {},
+						},
+					},
+					{
 						name: 'tap_action',
 						label:
 							this.hass?.localize?.(

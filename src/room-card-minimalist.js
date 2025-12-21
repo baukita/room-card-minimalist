@@ -63,6 +63,11 @@ const COLOR_TEMPLATES = {
 		background_color: 'rgba(var(--color-indigo, 63, 81, 181), 0.2)',
 		text_color: 'rgba(var(--color-indigo-text, 63, 81, 181),1)',
 	},
+	disabled: {
+		icon_color: 'var(--disabled-text-color, rgba(128, 128, 128, 0.4))',
+		background_color: 'rgba(128, 128, 128, 0.1)',
+		text_color: 'var(--disabled-text-color, rgba(128, 128, 128, 0.4))',
+	},
 };
 
 class RoomCard extends LitElement {
@@ -232,8 +237,19 @@ class RoomCard extends LitElement {
 	}
 
 	_applyCardTemplate() {
-		if (this._config.card_template && COLOR_TEMPLATES[this._config.card_template]) {
-			const template = COLOR_TEMPLATES[this._config.card_template];
+		let useDisabledTemplate = false;
+		if (this._config.card_entity && this.hass) {
+			const entityState = this.hass.states[this._config.card_entity];
+			if (entityState) {
+				const stateValue = entityState.state;
+				useDisabledTemplate = stateValue === 'off' || stateValue === 'unavailable';
+			}
+		}
+
+		const templateToUse = useDisabledTemplate ? 'disabled' : this._config.card_template;
+
+		if (templateToUse && COLOR_TEMPLATES[templateToUse]) {
+			const template = COLOR_TEMPLATES[templateToUse];
 			return {
 				background_circle_color:
 					(this._config.background_circle_color &&
