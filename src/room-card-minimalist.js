@@ -1020,8 +1020,8 @@ class RoomCard extends LitElement {
 				--main-color: rgb(var(--rgb-grey));
 				--icon-size: 80px;
 				--icon-background-size: 175px;
-				--state-icon-size: 1.8rem;
-				--state-item-size: 45px;
+				--state-icon-size: 2rem;
+				--state-item-size: 50px;
 				--card-primary-font-size: 18px;
 				--card-primary-font-weight: 600;
 				--card-primary-line-height: 1.3;
@@ -1197,17 +1197,17 @@ class RoomCard extends LitElement {
 			.states {
 				display: flex;
 				flex-direction: column;
-				gap: 12px;
+				gap: 8px;
 				align-items: center;
 				height: 236px;
 				justify-content: flex-start;
-				padding-top: 20px;
+				padding-top: 8px;
 			}
 
 			.states-reverse {
 				justify-content: flex-end;
 				padding-top: 0;
-				padding-bottom: 20px;
+				padding-bottom: 8px;
 			}
 
 			.state-item {
@@ -1272,8 +1272,8 @@ class RoomCard extends LitElement {
 					height: 200px;
 					--icon-size: 60px;
 					--icon-background-size: 140px;
-					--state-item-size: 38px;
-					--state-icon-size: 1.4rem;
+					--state-item-size: 42px;
+					--state-icon-size: 1.6rem;
 				}
 
 				.container {
@@ -1284,7 +1284,7 @@ class RoomCard extends LitElement {
 				.states {
 					height: 176px;
 					padding-top: 0;
-					gap: 8px;
+					gap: 6px;
 				}
 
 				.states-reverse {
