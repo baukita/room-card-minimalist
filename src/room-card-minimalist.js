@@ -859,6 +859,9 @@ class RoomCard extends LitElement {
 
 		const isItemClickable = this._isItemClickable(item);
 
+		// Get the state display value for the pill
+		const stateDisplayValue = this._getStateDisplayValue(item, stateIsOn, currentHvacMode);
+
 		return html`
 			<ha-card
 				@click=${isItemClickable ? (e) => this._handleItemClick(e, item) : null}
@@ -877,7 +880,8 @@ class RoomCard extends LitElement {
 					class="state-icon ${iconClass}"
 					.icon=${icon}
 					style="color: ${finalIconColor}"
-				/>
+				></ha-icon>
+				<span class="state-text" style="color: ${finalIconColor}">${stateDisplayValue}</span>
 			</ha-card>
 		`;
 	}
@@ -906,6 +910,80 @@ class RoomCard extends LitElement {
 		}
 
 		return this._isTemplate(item) ? this._templateResults[item]?.result?.toString() : item;
+	}
+
+	// Capitalize first letter of a string
+	_capitalize(str) {
+		if (!str) return str;
+		const s = String(str);
+		return s.charAt(0).toUpperCase() + s.slice(1);
+	}
+
+	// Get formatted state display value for entity pills
+	_getStateDisplayValue(item, stateIsOn, currentHvacMode) {
+		if (item.type === 'template') {
+			if (!stateIsOn) return 'Off';
+			// For templates, show the evaluated value if available
+			const evaluated = this._getValue(item.condition);
+			if (evaluated) return this._capitalize(evaluated);
+			// Fallback: show raw condition text (truncated, without template markers)
+			if (item.condition) {
+				const cleanCondition = item.condition.replace(/\{\{|\}\}/g, '').trim();
+				return cleanCondition.length > 10 ? cleanCondition.substring(0, 10) + '…' : cleanCondition;
+			}
+			return 'On';
+		}
+
+		if (!item.entity || !this.hass?.states?.[item.entity]) {
+			// Fallback for entity preview when entity doesn't exist
+			return stateIsOn ? 'On' : 'Off';
+		}
+
+		const entityState = this.hass.states[item.entity];
+		const state = entityState.state;
+
+		// For climate entities, show the HVAC mode
+		if (this._isClimateEntity(item.entity)) {
+			return this._capitalize(currentHvacMode || state);
+		}
+
+		// For lights with brightness, show percentage
+		if (item.entity.startsWith('light.') && stateIsOn && entityState.attributes?.brightness) {
+			const brightness = Math.round((entityState.attributes.brightness / 255) * 100);
+			return `${brightness}%`;
+		}
+
+		// For covers, show position percentage
+		if (item.entity.startsWith('cover.') && entityState.attributes?.current_position !== undefined) {
+			return `${entityState.attributes.current_position}%`;
+		}
+
+		// For fans with percentage
+		if (item.entity.startsWith('fan.') && stateIsOn && entityState.attributes?.percentage !== undefined) {
+			return `${entityState.attributes.percentage}%`;
+		}
+
+		// For media players, show state or media title
+		if (item.entity.startsWith('media_player.')) {
+			if (stateIsOn && entityState.attributes?.media_title) {
+				const title = entityState.attributes.media_title;
+				title = title.length > 10 ? title.substring(0, 10) + '…' : title;
+				return this._capitalize(title);
+			}
+			return this._capitalize(state);
+		}
+
+		// For sensors with unit, show value and unit
+		if (item.entity.startsWith('sensor.') && entityState.attributes?.unit_of_measurement) {
+			return `${state}${entityState.attributes.unit_of_measurement}`;
+		}
+
+		// Default: capitalize first letter of state
+		if (state && state !== 'unavailable' && state !== 'unknown') {
+			return this._capitalize(state);
+		}
+
+		return this._capitalize(state) || '';
 	}
 
 	// Get stat value and icon based on stat type (entity or template)
@@ -1088,8 +1166,9 @@ class RoomCard extends LitElement {
 				--main-color: rgb(var(--rgb-grey));
 				--icon-size: var(--state-item-size);
 				--icon-background-size: 140px;
-				--state-icon-size: 1.8rem;
-				--state-item-size: 45px;
+				--state-icon-size: 1.6rem;
+				--state-item-size: 50px;
+				--state-item-min-width: 100px;
 				--card-primary-font-size: 18px;
 				--card-primary-font-weight: 600;
 				--card-primary-line-height: 1.3;
@@ -1098,7 +1177,7 @@ class RoomCard extends LitElement {
 				--card-secondary-line-height: 1.2;
 				--spacing: 8px;
 				--border-radius: 12px;
-				--state-border-radius: 50%;
+				--state-border-radius: 20px;
 
 				/* Home Assistant card defaults */
 				box-sizing: border-box;
@@ -1293,10 +1372,10 @@ class RoomCard extends LitElement {
 				display: flex;
 				flex-direction: column;
 				gap: 8px;
-				align-items: center;
+				align-items: flex-end;
 				height: 236px;
 				justify-content: flex-start;
-				padding-top: 8px;
+				padding-top: 16px;
 			}
 
 			.states-reverse {
@@ -1307,15 +1386,18 @@ class RoomCard extends LitElement {
 
 			.state-item {
 				display: flex;
+				flex-direction: row;
 				align-items: center;
-				justify-content: center;
-				width: var(--state-item-size);
+				justify-content: flex-start;
+				min-width: var(--state-item-min-width);
 				height: var(--state-item-size);
+				padding: 0 12px 0 8px;
+				gap: 6px;
 				border-radius: var(--state-border-radius);
 				transition: all 0.2s ease;
 				position: relative;
 				z-index: 1;
-				border: none;
+				box-sizing: border-box;
 			}
 
 			.state-item.clickable {
@@ -1334,6 +1416,7 @@ class RoomCard extends LitElement {
 				--mdc-icon-size: var(--state-icon-size);
 				transition: color 0.2s ease;
 				color: var(--primary-text-color);
+				flex-shrink: 0;
 			}
 
 			.state-icon.on {
@@ -1342,6 +1425,15 @@ class RoomCard extends LitElement {
 
 			.state-icon.off {
 				color: var(--secondary-text-color);
+			}
+
+			.state-text {
+				font-size: 12px;
+				font-weight: 500;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				max-width: 60px;
 			}
 
 			.invalid-entity {
@@ -1366,8 +1458,6 @@ class RoomCard extends LitElement {
 				:host {
 					height: 200px;
 					--icon-background-size: 120px;
-					--state-item-size: 38px;
-					--state-icon-size: 1.4rem;
 				}
 
 				.container {
@@ -1385,11 +1475,27 @@ class RoomCard extends LitElement {
 					padding-bottom: 0;
 				}
 
+				.state-item {
+					padding: 0 10px 0 6px;
+					gap: 4px;
+				}
+
+				.state-text {
+					font-size: 11px;
+					max-width: 50px;
+				}
+
 				.icon-background-square {
 					width: 115px !important;
 					height: 115px !important;
 					top: -45px !important;
 					left: -13px !important;
+				}
+			}
+
+			@media (max-width: 476px) {
+				:host {
+					--state-item-min-width: 70px;
 				}
 			}
 		`;
