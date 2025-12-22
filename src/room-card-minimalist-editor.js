@@ -261,6 +261,85 @@ class RoomCardEditor extends LitElement {
 		this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: this._config } }));
 	}
 
+	// Stats management methods
+	_addStat() {
+		if (!this._config) return;
+
+		const stats = [...(this._config.stats || [])];
+		stats.push({ type: 'template', icon: 'mdi:chart-bar', value: '' });
+
+		this._config = { ...this._config, stats };
+		this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: this._config } }));
+	}
+
+	_deleteStat(idx) {
+		if (!this._config) return;
+
+		const stats = [...(this._config.stats || [])];
+		stats.splice(idx, 1);
+
+		this._config = { ...this._config, stats };
+		this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: this._config } }));
+	}
+
+	_moveStat(idx, pos) {
+		if (!this._config) return;
+
+		const stats = [...(this._config.stats || [])];
+		[stats[idx], stats[idx + pos]] = [stats[idx + pos], stats[idx]];
+
+		this._config = { ...this._config, stats };
+		this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: this._config } }));
+	}
+
+	_valueChangedStat(idx, ev) {
+		if (!this._config || !this.hass) return;
+
+		const stats = [...(this._config.stats || [])];
+		stats[idx] = ev.detail.value;
+
+		this._config = { ...this._config, stats };
+		this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: this._config } }));
+	}
+
+	_handleStatDragStart(ev, index) {
+		ev.dataTransfer.setData('text/plain', `stat-${index}`);
+		ev.dataTransfer.effectAllowed = 'move';
+
+		const dragElement = ev.target.closest('.box');
+		if (dragElement) {
+			dragElement.classList.add('dragging');
+		}
+
+		ev.target.classList.add('dragging');
+		this.classList.add('dragging');
+		document.body.style.cursor = 'grabbing';
+	}
+
+	_handleStatDrop(ev, dropIndex) {
+		ev.preventDefault();
+
+		const dropTarget = ev.target.closest('.box');
+		if (dropTarget) {
+			dropTarget.classList.remove('drag-over');
+		}
+
+		const data = ev.dataTransfer.getData('text/plain');
+		if (!data.startsWith('stat-')) return;
+
+		const dragIndex = parseInt(data.replace('stat-', ''));
+		if (dragIndex === dropIndex) return;
+
+		const stats = [...(this._config.stats || [])];
+		const draggedStat = stats[dragIndex];
+
+		stats.splice(dragIndex, 1);
+		stats.splice(dropIndex, 0, draggedStat);
+
+		this._config = { ...this._config, stats };
+		this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: this._config } }));
+	}
+
 	_handleDragStart(ev, index) {
 		ev.dataTransfer.setData('text/plain', index.toString());
 		ev.dataTransfer.effectAllowed = 'move';
@@ -655,6 +734,215 @@ class RoomCardEditor extends LitElement {
 		];
 	}
 
+	_getStatSchema(stat) {
+		const baseSchema = [
+			{
+				name: 'type',
+				label: localize(this.hass, 'stat_type', 'Type'),
+				selector: {
+					select: {
+						multiple: false,
+						mode: 'dropdown',
+						options: [
+							{
+								label: localize(this.hass, 'stat_type_entity', 'Entity'),
+								value: 'entity',
+							},
+							{
+								label: localize(this.hass, 'stat_type_template', 'Template'),
+								value: 'template',
+							},
+						],
+					},
+				},
+			},
+		];
+
+		// Entity-specific fields
+		if (stat.type === 'entity') {
+			baseSchema.push(
+				{
+					name: 'entity',
+					label: localize(this.hass, 'stat_entity', 'Entity'),
+					required: true,
+					selector: { entity: {} },
+				},
+				{
+					type: 'grid',
+					name: '',
+					schema: [
+						{
+							name: 'icon',
+							label: localize(this.hass, 'stat_icon', 'Icon'),
+							selector: { icon: {} },
+							context: { icon_entity: 'entity' },
+						},
+						{
+							name: 'show_unit',
+							label: localize(this.hass, 'stat_show_unit', 'Show Unit'),
+							selector: { boolean: {} },
+						},
+					],
+				}
+			);
+		} else {
+			// Template-specific fields
+			baseSchema.push(
+				{
+					name: 'icon',
+					label: localize(this.hass, 'stat_icon', 'Icon'),
+					selector: { icon: {} },
+				},
+				{
+					name: 'value',
+					label: localize(this.hass, 'stat_value', 'Value (template)'),
+					required: true,
+					selector: { template: {} },
+				}
+			);
+		}
+
+		// Common fields for both types
+		baseSchema.push(
+			{
+				type: 'grid',
+				name: '',
+				schema: [
+					{
+						name: 'color',
+						label: localize(this.hass, 'stat_color', 'Color'),
+						selector: { text: {} },
+					},
+					{
+						name: 'label',
+						label: localize(this.hass, 'stat_label', 'Label (tooltip)'),
+						selector: { text: {} },
+					},
+				],
+			},
+			{
+				name: 'hide_if_empty',
+				label: localize(this.hass, 'stat_hide_if_empty', 'Hide if empty'),
+				selector: { boolean: {} },
+			}
+		);
+
+		return baseSchema;
+	}
+
+	_getStatDisplayName(stat, index) {
+		if (stat.label) {
+			return stat.label;
+		}
+		if (stat.type === 'entity' && stat.entity && this.hass) {
+			const entityObj = this.hass.states[stat.entity];
+			if (entityObj && entityObj.attributes.friendly_name) {
+				return entityObj.attributes.friendly_name;
+			}
+			return stat.entity;
+		}
+		if (stat.value && stat.value.length > 30) {
+			return `${stat.value.substring(0, 30)}...`;
+		}
+		if (stat.value) {
+			return stat.value;
+		}
+		return `Stat ${index + 1}`;
+	}
+
+	_getStatIcon(stat) {
+		if (stat.icon) {
+			return stat.icon;
+		}
+		if (stat.type === 'entity' && stat.entity && this.hass) {
+			const entityObj = this.hass.states[stat.entity];
+			if (entityObj && entityObj.attributes.icon) {
+				return entityObj.attributes.icon;
+			}
+			// Fallback icons based on domain
+			const domain = stat.entity.split('.')[0];
+			const domainIcons = {
+				sensor: 'mdi:gauge',
+				binary_sensor: 'mdi:checkbox-marked-circle',
+				weather: 'mdi:weather-partly-cloudy',
+				sun: 'mdi:white-balance-sunny',
+				person: 'mdi:account',
+				device_tracker: 'mdi:crosshairs-gps',
+				counter: 'mdi:counter',
+				input_number: 'mdi:ray-vertex',
+				number: 'mdi:ray-vertex',
+			};
+			return domainIcons[domain] || 'mdi:chart-bar';
+		}
+		return 'mdi:chart-bar';
+	}
+
+	_renderStats() {
+		const stats = this._config.stats || [];
+
+		return html`
+			${stats.map(
+				(stat, stat_idx) => html`
+					<div
+						class="box"
+						@dragover=${this._handleDragOver}
+						@dragleave=${this._handleDragLeave}
+						@drop=${(ev) => this._handleStatDrop(ev, stat_idx)}
+					>
+						<div class="entity-header">
+							<div class="entity-info">
+								<ha-icon
+									.icon=${'mdi:drag'}
+									class="drag-handle"
+									draggable="true"
+									@dragstart=${(ev) => this._handleStatDragStart(ev, stat_idx)}
+									@dragend=${this._handleDragEnd}
+								></ha-icon>
+								<ha-icon
+									.icon=${this._getStatIcon(stat)}
+									class="entity-icon"
+								></ha-icon>
+								<span class="entity-title">
+									${this._getStatDisplayName(stat, stat_idx)}
+								</span>
+							</div>
+							<div class="entity-controls">
+								<mwc-icon-button
+									.disabled=${stat_idx === 0}
+									@click=${() => this._moveStat(stat_idx, -1)}
+									title="${localize(this.hass, 'move_up', 'Move Up')}"
+								>
+									<ha-icon .icon=${'mdi:arrow-up'}></ha-icon>
+								</mwc-icon-button>
+								<mwc-icon-button
+									.disabled=${stat_idx === stats.length - 1}
+									@click=${() => this._moveStat(stat_idx, 1)}
+									title="${localize(this.hass, 'move_down', 'Move Down')}"
+								>
+									<ha-icon .icon=${'mdi:arrow-down'}></ha-icon>
+								</mwc-icon-button>
+								<mwc-icon-button
+									@click=${() => this._deleteStat(stat_idx)}
+									title="${localize(this.hass, 'delete', 'Delete')}"
+								>
+									<ha-icon .icon=${'mdi:close'}></ha-icon>
+								</mwc-icon-button>
+							</div>
+						</div>
+
+						<ha-form
+							.hass=${this.hass}
+							.schema=${this._getStatSchema(stat)}
+							.data=${stat}
+							.computeLabel=${(s) => s.label ?? s.name}
+							@value-changed=${(ev) => this._valueChangedStat(stat_idx, ev)}
+						></ha-form>
+					</div>
+				`
+			)}
+		`;
+	}
+
 	_renderEntities() {
 		if (this._config.entities === undefined) {
 			this._config = { ...this._config, entities: [] };
@@ -921,6 +1209,19 @@ class RoomCardEditor extends LitElement {
 				.computeLabel=${(s) => s.label ?? s.name}
 				@value-changed=${this._valueChanged}
 			></ha-form>
+
+			<div style="display: flex;justify-content: space-between; margin-top: 20px;">
+				<p>${localize(this.hass, 'stats', 'Stats')}</p>
+				<mwc-button style="margin-top: 5px; cursor: pointer;" @click=${this._addStat}>
+					<ha-icon .icon=${'mdi:plus'}></ha-icon>${localize(
+						this.hass,
+						'add_stat',
+						'Add Stat'
+					)}
+				</mwc-button>
+			</div>
+
+			${this._renderStats()}
 
 			<div style="display: flex;justify-content: space-between; margin-top: 20px;">
 				<p>${localize(this.hass, 'states', 'States')}</p>

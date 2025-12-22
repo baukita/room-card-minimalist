@@ -145,6 +145,7 @@ class RoomCard extends LitElement {
 			secondary: '',
 			secondary_color: 'var(--secondary-text-color)',
 			secondary_entity: '',
+			stats: [],
 			entities: [],
 			background_type: migratedBackgroundType,
 			background_image: '',
@@ -411,6 +412,31 @@ class RoomCard extends LitElement {
 											tabindex="${isSecondaryClickable ? '0' : '-1'}"
 											>${secondary}</span
 										>`
+								: ''}
+							${this._config.stats && this._config.stats.length > 0
+								? html`<div class="stats-row">
+										${this._config.stats.map((stat) => {
+											const { value: statValue, icon: statIcon } =
+												this._getStatValueAndIcon(stat);
+											if (!statValue && stat.hide_if_empty) return '';
+											return html`
+												<div class="stat-item" title="${stat.label || ''}">
+													${statIcon
+														? html`<ha-icon
+																class="stat-icon"
+																.icon=${statIcon}
+																style="color: ${stat.color || 'var(--secondary-text-color)'}"
+															/>`
+														: ''}
+													<span
+														class="stat-value"
+														style="color: ${stat.color || 'var(--secondary-text-color)'}"
+														>${statValue}</span
+													>
+												</div>
+											`;
+										})}
+									</div>`
 								: ''}
 						</div>
 
@@ -882,6 +908,48 @@ class RoomCard extends LitElement {
 		return this._isTemplate(item) ? this._templateResults[item]?.result?.toString() : item;
 	}
 
+	// Get stat value and icon based on stat type (entity or template)
+	_getStatValueAndIcon(stat) {
+		let value = '';
+		let icon = stat.icon || null;
+
+		if (stat.type === 'entity' && stat.entity) {
+			const entityState = this.hass?.states?.[stat.entity];
+			if (entityState) {
+				value = entityState.state;
+				// Add unit if show_unit is true
+				if (stat.show_unit && entityState.attributes?.unit_of_measurement) {
+					value = `${value}${entityState.attributes.unit_of_measurement}`;
+				}
+				// Get icon from entity if not specified
+				if (!icon && entityState.attributes?.icon) {
+					icon = entityState.attributes.icon;
+				}
+				// Fallback icon based on domain
+				if (!icon) {
+					const domain = stat.entity.split('.')[0];
+					const domainIcons = {
+						sensor: 'mdi:gauge',
+						binary_sensor: 'mdi:checkbox-marked-circle',
+						weather: 'mdi:weather-partly-cloudy',
+						sun: 'mdi:white-balance-sunny',
+						person: 'mdi:account',
+						device_tracker: 'mdi:crosshairs-gps',
+						counter: 'mdi:counter',
+						input_number: 'mdi:ray-vertex',
+						number: 'mdi:ray-vertex',
+					};
+					icon = domainIcons[domain] || null;
+				}
+			}
+		} else {
+			// Template type - use the value template
+			value = this._getValueRawOrTemplate(stat.value) || '';
+		}
+
+		return { value, icon };
+	}
+
 	_getBackgroundImageUrl() {
 		if (this._config.background_type === 'person' && this._config.background_person_entity) {
 			const personEntity = this.hass.states[this._config.background_person_entity];
@@ -1186,6 +1254,33 @@ class RoomCard extends LitElement {
 
 			.secondary.clickable:hover {
 				opacity: 0.8;
+			}
+
+			.stats-row {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 8px;
+				margin-top: 8px;
+			}
+
+			.stat-item {
+				display: flex;
+				align-items: center;
+				gap: 4px;
+				padding: 2px 8px;
+				border-radius: 12px;
+				background: var(--ha-card-background, var(--card-background-color, #fff));
+				border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+			}
+
+			.stat-icon {
+				--mdc-icon-size: 14px;
+			}
+
+			.stat-value {
+				font-size: 12px;
+				font-weight: 500;
+				white-space: nowrap;
 			}
 
 			.content-right {
