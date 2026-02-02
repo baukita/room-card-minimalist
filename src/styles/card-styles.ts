@@ -8,10 +8,11 @@ import { css } from 'lit';
 export const cardStyles = css`
 	:host {
 		--main-color: rgb(var(--rgb-grey));
-		--icon-size: 80px;
-		--icon-background-size: 175px;
-		--state-icon-size: 1.8rem;
-		--state-item-size: 45px;
+		--icon-size: var(--state-item-size);
+		--icon-background-size: 140px;
+		--state-icon-size: 1.6rem;
+		--state-item-size: 50px;
+		--state-item-min-width: 100px;
 		--card-primary-font-size: 18px;
 		--card-primary-font-weight: 600;
 		--card-primary-line-height: 1.3;
@@ -20,7 +21,7 @@ export const cardStyles = css`
 		--card-secondary-line-height: 1.2;
 		--spacing: 8px;
 		--border-radius: 12px;
-		--state-border-radius: 50%;
+		--state-border-radius: 20px;
 
 		/* Home Assistant card defaults */
 		box-sizing: border-box;
@@ -152,7 +153,7 @@ export const cardStyles = css`
 		color: var(--primary-text-color);
 		text-overflow: ellipsis;
 		overflow: hidden;
-		white-space: nowrap;
+		white-space: wrap;
 		margin-bottom: 6px;
 	}
 
@@ -211,6 +212,11 @@ export const cardStyles = css`
 		border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
 	}
 
+	.stat-item.icon-only {
+		padding: 4px;
+		gap: 0;
+	}
+
 	.stat-icon {
 		--mdc-icon-size: 14px;
 	}
@@ -230,30 +236,35 @@ export const cardStyles = css`
 	.states {
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
-		align-items: center;
+		gap: 8px;
+		align-items: flex-end;
 		height: 236px;
 		justify-content: flex-start;
-		padding-top: 20px;
+		padding-top: 16px;
 	}
 
 	.states-reverse {
 		justify-content: flex-end;
 		padding-top: 0;
-		padding-bottom: 20px;
+		padding-bottom: 8px;
 	}
 
 	.state-item {
 		display: flex;
+		flex-direction: row;
 		align-items: center;
-		justify-content: center;
-		width: var(--state-item-size);
+		justify-content: flex-start;
+		min-width: var(--state-item-min-width);
 		height: var(--state-item-size);
+		padding: 0 12px 0 8px;
+		gap: 6px;
 		border-radius: var(--state-border-radius);
 		transition: all 0.2s ease;
 		position: relative;
 		z-index: 1;
+		box-sizing: border-box;
 		border: none;
+		max-width: 100px;
 	}
 
 	.state-item.clickable {
@@ -268,10 +279,18 @@ export const cardStyles = css`
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 	}
 
+	.state-item.icon-only {
+		min-width: var(--state-item-size);
+		width: var(--state-item-size);
+		padding: 0;
+		justify-content: center;
+	}
+
 	.state-icon {
 		--mdc-icon-size: var(--state-icon-size);
 		transition: color 0.2s ease;
 		color: var(--primary-text-color);
+		flex-shrink: 0;
 	}
 
 	.state-icon.on {
@@ -282,24 +301,13 @@ export const cardStyles = css`
 		color: var(--secondary-text-color);
 	}
 
-	.state-item.has-value {
-		position: relative;
-		overflow: visible;
-	}
-
-	.state-value {
-		position: absolute;
-		bottom: -2px;
-		left: 50%;
-		transform: translateX(-50%);
-		font-size: 10px;
-		font-weight: 600;
+	.state-text {
+		font-size: 12px;
+		font-weight: 500;
 		white-space: nowrap;
-		text-align: center;
-		line-height: 1;
-		background: var(--card-background-color, var(--ha-card-background, #fff));
-		padding: 1px 4px;
-		border-radius: 4px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 60px;
 	}
 
 	.invalid-entity {
@@ -323,10 +331,7 @@ export const cardStyles = css`
 	@media (max-width: 768px) {
 		:host {
 			height: 200px;
-			--icon-size: 60px;
-			--icon-background-size: 140px;
-			--state-item-size: 38px;
-			--state-icon-size: 1.4rem;
+			--icon-background-size: 120px;
 		}
 
 		.container {
@@ -337,16 +342,21 @@ export const cardStyles = css`
 		.states {
 			height: 176px;
 			padding-top: 0;
-			gap: 8px;
+			gap: 6px;
 		}
 
 		.states-reverse {
 			padding-bottom: 0;
 		}
 
-		.state-value {
-			font-size: 9px;
-			padding: 1px 3px;
+		.state-item {
+			padding: 0 10px 0 6px;
+			gap: 4px;
+		}
+
+		.state-text {
+			font-size: 11px;
+			max-width: 50px;
 		}
 
 		.icon-background-square {
@@ -354,6 +364,12 @@ export const cardStyles = css`
 			height: 115px !important;
 			top: -45px !important;
 			left: -13px !important;
+		}
+	}
+
+	@media (max-width: 476px) {
+		:host {
+			--state-item-min-width: 70px;
 		}
 	}
 `;

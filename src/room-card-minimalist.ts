@@ -40,6 +40,7 @@ import {
 	applyEntityTemplates,
 	getFinalColors,
 	getEntityIcon,
+	getStateDisplayValue,
 	renderEntityItem,
 	renderInvalidEntity,
 } from './utils';
@@ -492,22 +493,15 @@ export class RoomCard extends LitElement {
 		const { iconColor, backgroundColor } = getFinalColors(item, isOn, baseColors, this.hass);
 		const icon = getEntityIcon(item, isOn, currentHvacMode, currentEntityState);
 
-		// Get display value if show_value is enabled
-		let displayValue: string | undefined;
-		if (item.show_value) {
-			if (item.value_template) {
-				// Use value_template if provided
-				displayValue = this._getValueRawOrTemplate(item.value_template);
-			} else if (item.type === 'entity') {
-				// Use entity state directly for entity type
-				const entityItem = item as StandardEntityConfig;
-				const entityState = this.hass?.states[entityItem.entity];
-				displayValue = entityState?.state;
-			} else if (item.type === 'template') {
-				// Use stateValue (template result) for template type
-				displayValue = stateValue;
-			}
-		}
+		// Get state display value for the pill
+		const stateDisplayValue = getStateDisplayValue(
+			item,
+			isOn,
+			currentHvacMode,
+			currentEntityState,
+			stateValue,
+			this.hass
+		);
 
 		const handlers = isEntityItemClickable(item)
 			? this._actionController.createHandlers(item as ActionsConfig, {
@@ -522,21 +516,29 @@ export class RoomCard extends LitElement {
 			backgroundColor,
 			icon,
 			isOn,
-			displayValue
+			stateDisplayValue
 		);
 	}
 
 	/**
 	 * Get stat value and icon based on stat type (entity or template)
 	 */
-	private _getStatValueAndIcon(stat: StatConfig): { value: string; icon: string | null } {
+	private _getStatValueAndIcon(stat: StatConfig): { value: string; icon: string | null; isOn: boolean } {
 		let value = '';
 		let icon = stat.icon || null;
+		let isOn = false;
 
 		if (stat.type === 'entity' && stat.entity) {
 			const entityState = this.hass?.states?.[stat.entity];
 			if (entityState) {
 				value = entityState.state;
+				// Determine on/off state
+				if (stat.on_state) {
+					isOn = value === stat.on_state;
+				} else {
+					// Default: any state except 'off', 'unavailable', 'unknown' is considered "on"
+					isOn = value !== 'off' && value !== 'unavailable' && value !== 'unknown';
+				}
 				// Add unit if show_unit is true
 				if (stat.show_unit && entityState.attributes?.unit_of_measurement) {
 					value = `${value}${entityState.attributes.unit_of_measurement}`;
@@ -561,13 +563,23 @@ export class RoomCard extends LitElement {
 					};
 					icon = domainIcons[domain] || null;
 				}
+				// Use icon_off if state is off and icon_off is specified
+				if (!isOn && stat.icon_off) {
+					icon = stat.icon_off;
+				}
 			}
 		} else {
 			// Template type - use the value template
 			value = this._getValueRawOrTemplate(stat.value) || '';
+			// Template is "on" if it returns a non-empty value
+			isOn = value !== '' && value !== undefined;
+			// Use icon_off if template is empty/off and icon_off is specified
+			if (!isOn && stat.icon_off) {
+				icon = stat.icon_off;
+			}
 		}
 
-		return { value, icon };
+		return { value, icon, isOn };
 	}
 
 	/**
@@ -581,22 +593,28 @@ export class RoomCard extends LitElement {
 		return html`
 			<div class="stats-row">
 				${this._config.stats.map((stat) => {
-					const { value: statValue, icon: statIcon } = this._getStatValueAndIcon(stat);
-					if (!statValue && stat.hide_if_empty) return '';
+					const { value: statValue, icon: statIcon, isOn } = this._getStatValueAndIcon(stat);
+					// Hide if empty (and hide_if_empty is set) or if off (and hide_when_off is set)
+					if ((!statValue && stat.hide_if_empty) || (!isOn && stat.hide_when_off)) return '';
+					const showLabel = stat.show_label !== false; // Default to true
+					const statColor = isOn
+						? (stat.color || 'var(--secondary-text-color)')
+						: (stat.color_off || stat.color || 'var(--secondary-text-color)');
 					return html`
-						<div class="stat-item" title="${stat.label || ''}">
+						<div class="stat-item ${showLabel ? '' : 'icon-only'}" title="${stat.label || ''}">
 							${statIcon
 								? html`<ha-icon
 										class="stat-icon"
 										.icon=${statIcon}
-										style="color: ${stat.color || 'var(--secondary-text-color)'}"
+										style="color: ${statColor}"
 									/>`
 								: ''}
-							<span
-								class="stat-value"
-								style="color: ${stat.color || 'var(--secondary-text-color)'}"
-								>${statValue}</span
-							>
+							${showLabel
+								? html`<span
+										class="stat-value"
+										style="color: ${statColor}"
+										>${statValue}</span>`
+								: nothing}
 						</div>
 					`;
 				})}

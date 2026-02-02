@@ -503,9 +503,26 @@ export class RoomCardEditor extends LitElement {
 					schema: [
 						{
 							name: 'icon',
-							label: localize(this.hass, 'stat_icon', 'Icon'),
+							label: localize(this.hass, 'stat_icon', 'Icon (On)'),
 							selector: { icon: {} },
 							context: { icon_entity: 'entity' },
+						},
+						{
+							name: 'icon_off',
+							label: localize(this.hass, 'stat_icon_off', 'Icon (Off)'),
+							selector: { icon: {} },
+							context: { icon_entity: 'entity' },
+						},
+					],
+				},
+				{
+					type: 'grid',
+					name: '',
+					schema: [
+						{
+							name: 'on_state',
+							label: localize(this.hass, 'stat_on_state', 'On State'),
+							selector: { text: {} },
 						},
 						{
 							name: 'show_unit',
@@ -519,9 +536,20 @@ export class RoomCardEditor extends LitElement {
 			// Template-specific fields
 			baseSchema.push(
 				{
-					name: 'icon',
-					label: localize(this.hass, 'stat_icon', 'Icon'),
-					selector: { icon: {} },
+					type: 'grid',
+					name: '',
+					schema: [
+						{
+							name: 'icon',
+							label: localize(this.hass, 'stat_icon', 'Icon (On)'),
+							selector: { icon: {} },
+						},
+						{
+							name: 'icon_off',
+							label: localize(this.hass, 'stat_icon_off', 'Icon (Off)'),
+							selector: { icon: {} },
+						},
+					],
 				},
 				{
 					name: 'value',
@@ -540,20 +568,47 @@ export class RoomCardEditor extends LitElement {
 				schema: [
 					{
 						name: 'color',
-						label: localize(this.hass, 'stat_color', 'Color'),
+						label: localize(this.hass, 'stat_color', 'Color (On)'),
 						selector: { text: {} },
 					},
 					{
-						name: 'label',
-						label: localize(this.hass, 'stat_label', 'Label (tooltip)'),
+						name: 'color_off',
+						label: localize(this.hass, 'stat_color_off', 'Color (Off)'),
 						selector: { text: {} },
 					},
 				],
 			},
 			{
-				name: 'hide_if_empty',
-				label: localize(this.hass, 'stat_hide_if_empty', 'Hide if empty'),
-				selector: { boolean: {} },
+				type: 'grid',
+				name: '',
+				schema: [
+					{
+						name: 'label',
+						label: localize(this.hass, 'stat_label', 'Label (tooltip)'),
+						selector: { text: {} },
+					},
+					{
+						name: 'show_label',
+						label: localize(this.hass, 'stat_show_label', 'Show Label'),
+						selector: { boolean: {} },
+					},
+				],
+			},
+			{
+				type: 'grid',
+				name: '',
+				schema: [
+					{
+						name: 'hide_if_empty',
+						label: localize(this.hass, 'stat_hide_if_empty', 'Hide if empty'),
+						selector: { boolean: {} },
+					},
+					{
+						name: 'hide_when_off',
+						label: localize(this.hass, 'stat_hide_when_off', 'Hide when off'),
+						selector: { boolean: {} },
+					},
+				],
 			}
 		);
 

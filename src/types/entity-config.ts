@@ -15,6 +15,7 @@ export interface BaseEntityConfig extends ActionsConfig {
 	type: EntityType;
 	icon: string;
 	icon_off?: string;
+	show_label?: boolean;
 	tap_action?: ActionConfig;
 	hold_action?: ActionConfig;
 	double_tap_action?: ActionConfig;

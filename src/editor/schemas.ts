@@ -271,6 +271,12 @@ export function getEntitySchema(ctx: SchemaContext, item: EntityConfig): Schema 
 						],
 					},
 				]),
+		// Show Label field
+		{
+			name: 'show_label',
+			label: localize(ctx.hass, 'show_label', 'Show Label'),
+			selector: { boolean: {} },
+		},
 		// Only show color/template fields for non-climate and non-multi-state entities
 		...(isClimate || isMultiStateEnabled
 			? []

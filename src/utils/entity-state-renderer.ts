@@ -247,11 +247,11 @@ export function renderEntityItem(
 	backgroundColor: string,
 	icon: string,
 	isOn: boolean,
-	displayValue?: string
+	stateDisplayValue: string
 ): TemplateResult {
 	const isClickable = isEntityItemClickable(item);
 	const iconClass = !isOn ? 'off' : 'on';
-	const hasValue = displayValue !== undefined && displayValue !== '';
+	const showLabel = item.show_label !== false; // Default to true
 
 	return html`
 		<div
@@ -263,9 +263,7 @@ export function renderEntityItem(
 			@touchend=${isClickable ? handlers?.onTouchEnd : null}
 			@contextmenu=${isClickable ? handlers?.onContextMenu : null}
 			tabindex="${isClickable ? '0' : '-1'}"
-			class="state-item ${isClickable ? 'clickable' : 'non-clickable'} ${hasValue
-				? 'has-value'
-				: ''}"
+			class="state-item ${isClickable ? 'clickable' : 'non-clickable'} ${showLabel ? '' : 'icon-only'}"
 			style="background-color: ${backgroundColor}"
 		>
 			<ha-icon
@@ -273,11 +271,126 @@ export function renderEntityItem(
 				.icon=${icon}
 				style="color: ${iconColor}"
 			></ha-icon>
-			${hasValue
-				? html`<span class="state-value" style="color: ${iconColor}">${displayValue}</span>`
+			${showLabel
+				? html`<span class="state-text" style="color: ${iconColor}">${stateDisplayValue}</span>`
 				: nothing}
 		</div>
 	`;
+}
+
+/**
+ * Capitalize first letter of a string
+ */
+function capitalize(str: string | undefined): string {
+	if (!str) return '';
+	const s = String(str);
+	return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/**
+ * Get formatted state display value for entity pills
+ * This automatically shows meaningful state information like brightness %, HVAC mode, etc.
+ */
+export function getStateDisplayValue(
+	item: EntityConfig,
+	stateIsOn: boolean,
+	currentHvacMode: string | null,
+	currentEntityState: string | null,
+	stateValue: string | undefined,
+	hass: HomeAssistant | undefined
+): string {
+	if (item.type === 'template') {
+		if (!stateIsOn) return 'Off';
+		// For templates, show the evaluated value if available
+		if (stateValue) return capitalize(stateValue);
+		// Fallback: show raw condition text (truncated, without template markers)
+		const templateItem = item as TemplateEntityConfig;
+		if (templateItem.condition) {
+			const cleanCondition = templateItem.condition.replace(/\{\{|\}\}/g, '').trim();
+			return cleanCondition.length > 10
+				? cleanCondition.substring(0, 10) + '…'
+				: cleanCondition;
+		}
+		return 'On';
+	}
+
+	if (item.type !== 'entity') {
+		return stateIsOn ? 'On' : 'Off';
+	}
+
+	const entityItem = item as StandardEntityConfig;
+	if (!entityItem.entity || !hass?.states?.[entityItem.entity]) {
+		// Fallback for entity preview when entity doesn't exist
+		return stateIsOn ? 'On' : 'Off';
+	}
+
+	const entityState = getEntityState(hass, entityItem.entity);
+	if (!entityState) {
+		return stateIsOn ? 'On' : 'Off';
+	}
+
+	const state = entityState.state;
+
+	// For multi-state entities, show the current state
+	if (isMultiStateItem(item) && currentEntityState) {
+		return capitalize(currentEntityState);
+	}
+
+	// For climate entities, show the HVAC mode
+	if (isClimateEntityId(entityItem.entity)) {
+		return capitalize(currentHvacMode || state);
+	}
+
+	// For lights with brightness, show percentage
+	if (entityItem.entity.startsWith('light.') && stateIsOn) {
+		const lightAttrs = entityState.attributes as LightEntityAttributes;
+		if (lightAttrs?.brightness !== undefined) {
+			const brightness = Math.round((lightAttrs.brightness / 255) * 100);
+			return `${brightness}%`;
+		}
+	}
+
+	// For covers, show position percentage
+	if (entityItem.entity.startsWith('cover.')) {
+		const coverAttrs = entityState.attributes as { current_position?: number };
+		if (coverAttrs?.current_position !== undefined) {
+			return `${coverAttrs.current_position}%`;
+		}
+	}
+
+	// For fans with percentage
+	if (entityItem.entity.startsWith('fan.') && stateIsOn) {
+		const fanAttrs = entityState.attributes as { percentage?: number };
+		if (fanAttrs?.percentage !== undefined) {
+			return `${fanAttrs.percentage}%`;
+		}
+	}
+
+	// For media players, show state or media title
+	if (entityItem.entity.startsWith('media_player.')) {
+		const mediaAttrs = entityState.attributes as { media_title?: string };
+		if (stateIsOn && mediaAttrs?.media_title) {
+			let title = mediaAttrs.media_title;
+			title = title.length > 10 ? title.substring(0, 10) + '…' : title;
+			return capitalize(title);
+		}
+		return capitalize(state);
+	}
+
+	// For sensors with unit, show value and unit
+	if (entityItem.entity.startsWith('sensor.')) {
+		const sensorAttrs = entityState.attributes as { unit_of_measurement?: string };
+		if (sensorAttrs?.unit_of_measurement) {
+			return `${state}${sensorAttrs.unit_of_measurement}`;
+		}
+	}
+
+	// Default: capitalize first letter of state
+	if (state && state !== 'unavailable' && state !== 'unknown') {
+		return capitalize(state);
+	}
+
+	return capitalize(state) || '';
 }
 
 /**

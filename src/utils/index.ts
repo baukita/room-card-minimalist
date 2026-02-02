@@ -45,6 +45,7 @@ export {
 	applyEntityTemplates,
 	getFinalColors,
 	getEntityIcon,
+	getStateDisplayValue,
 	renderEntityItem,
 	renderInvalidEntity,
 } from './entity-state-renderer';

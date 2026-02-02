@@ -17,15 +17,20 @@ export type StatType = 'entity' | 'template';
 export interface StatConfig {
 	type: StatType;
 	icon?: string;
+	icon_off?: string;
 	// Entity type properties
 	entity?: string;
 	show_unit?: boolean;
+	on_state?: string;
 	// Template type properties
 	value?: string;
 	// Common properties
 	color?: string;
+	color_off?: string;
 	label?: string;
 	hide_if_empty?: boolean;
+	hide_when_off?: boolean;
+	show_label?: boolean;
 }
 
 // Legacy config properties (for migration)
