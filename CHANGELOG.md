@@ -1,3 +1,28 @@
+## [1.4.2](https://github.com/unbekannt3/room-card-minimalist/compare/v1.4.1...v1.4.2) (2026-02-10)
+
+### Bug Fixes
+
+* possible fix for semantic-release creating releases for dependabot PRs ([ec2b5d4](https://github.com/unbekannt3/room-card-minimalist/commit/ec2b5d45020070819dd38d9e06ff7d6bd01870fe))
+
+### Other
+
+* **deps-dev:** bump @babel/core from 7.28.6 to 7.29.0 ([7e0acfb](https://github.com/unbekannt3/room-card-minimalist/commit/7e0acfbe483dac7315fdb4e07da44b865b32b7c8))
+
+## [1.4.1](https://github.com/unbekannt3/room-card-minimalist/compare/v1.4.0...v1.4.1) (2026-02-10)
+
+### Other
+
+* **deps-dev:** bump @babel/preset-env from 7.28.6 to 7.29.0 ([f2b3e70](https://github.com/unbekannt3/room-card-minimalist/commit/f2b3e704c03c79a4edf3e3183f5c0c6827cef88d))
+* **deps-dev:** bump @commitlint/config-conventional ([d666290](https://github.com/unbekannt3/room-card-minimalist/commit/d666290610753aa74e440456458bd2ee0d673136))
+* **deps-dev:** bump @types/node from 25.1.0 to 25.2.0 ([472edd6](https://github.com/unbekannt3/room-card-minimalist/commit/472edd6fff16c61c8442f8dcdebbc719d6025d30))
+* **deps-dev:** bump webpack from 5.104.1 to 5.105.0 ([c129872](https://github.com/unbekannt3/room-card-minimalist/commit/c1298721813c0aee7155e069d89fefadc8ed0945))
+
+## [1.4.0](https://github.com/unbekannt3/room-card-minimalist/compare/v1.3.4...v1.4.0) (2026-02-10)
+
+### Features
+
+* add double tap support ([#44](https://github.com/unbekannt3/room-card-minimalist/issues/44)) ([2906d81](https://github.com/unbekannt3/room-card-minimalist/commit/2906d8120595f93c2f3e6f85259dcce999bb836b))
+
 ## [1.3.4](https://github.com/unbekannt3/room-card-minimalist/compare/v1.3.3...v1.3.4) (2026-02-01)
 
 ### Bug Fixes
